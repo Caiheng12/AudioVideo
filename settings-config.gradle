@@ -1,0 +1,7 @@
+def require(String name){
+    include name
+    project(":$name").projectDir = new File(settingsDir,"functions/$name")
+}
+
+require("VIP32_VideoSynthetis")
+require("baselibrary")

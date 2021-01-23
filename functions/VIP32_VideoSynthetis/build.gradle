@@ -1,13 +1,10 @@
-plugins {
-    id 'com.android.application'
-}
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        applicationId "com.henry.audiovideo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -33,7 +30,6 @@ dependencies {
     implementation dep.materialDesign
     implementation dep.appcompat
     implementation project(':baselibrary')
-    implementation project(':VIP32_VideoSynthetis')
 
     androidTestImplementation dep.espressoCore
 }

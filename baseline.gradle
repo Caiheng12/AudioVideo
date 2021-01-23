@@ -1,0 +1,14 @@
+ext {
+    compileSdkVersion = 28
+    buildToolsVersion = '28.0.3'
+    minSdkVersion = 21
+    targetSdkVersion = 26
+    supportLibrariesVersion = '28.0.0'
+
+    dep = [
+            constraintLayout: 'androidx.constraintlayout:constraintlayout:1.1.3',
+            materialDesign  : "com.google.android.material:material:1.2.1",
+            appcompat       : "androidx.appcompat:appcompat:1.2.0",
+            espressoCore    : "com.android.support.test.espresso:espresso-core:3.3.0",
+    ]
+}

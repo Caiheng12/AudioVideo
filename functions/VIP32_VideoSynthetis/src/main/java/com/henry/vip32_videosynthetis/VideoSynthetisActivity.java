@@ -1,10 +1,11 @@
-package com.example.audiovideo;
-
-import androidx.appcompat.app.AppCompatActivity;
+package com.henry.vip32_videosynthetis;
 
 import android.os.Bundle;
 
-public class MainActivity extends AppCompatActivity {
+import androidx.appcompat.app.AppCompatActivity;
+import com.example.baselibrary.R;
+
+public class VideoSynthetisActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
