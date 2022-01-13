@@ -1,21 +1,28 @@
-package com.maniu.h264player;
+package com.maniu.audiovideo.h264player;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-public class H264Player implements Runnable {
+public class H264Player1 implements Runnable {
     private static final String TAG = "H264Player";
     private Context context;
 
@@ -27,31 +34,27 @@ public class H264Player implements Runnable {
 //画面
     private Surface surface;
 
-    public H264Player(Context context,String path, Surface surface) {
+    public H264Player1(Context context, String path, Surface surface) {
 
         this.surface = surface;
         this.path = path;
         this.context = context;
 
         try {
-//            h265  --ISO hevc  兼容 硬编   不兼容   电视    -----》8k  4K
-            try {
-                mediaCodec = MediaCodec.createDecoderByType("video/avc");
-            } catch (Exception e) {
-//                不支持硬编
-            }
-
+//            h265  --ISO hevc
+            mediaCodec = MediaCodec.createDecoderByType("video/avc");
             MediaFormat mediaformat = MediaFormat.createVideoFormat("video/avc", 368, 384);
             mediaformat.setInteger(MediaFormat.KEY_FRAME_RATE, 15);
-            mediaCodec.configure(mediaformat, surface, null, 0);
-        } catch ( Exception e) {
+            mediaCodec.configure(mediaformat, null, null, 0);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 //MediaExtractor  视频      画面H264
+
+//    黄视频
     public void play() {
         mediaCodec.start();
-        //java线程本质是什么线程         linux线程
         new Thread(this).start();
     }
 
@@ -69,8 +72,6 @@ public class H264Player implements Runnable {
 //            偷懒   文件  加载内存     文件 1G  1G
             bytes = getBytes(path);
         } catch ( Exception e) {
-            Log.e(TAG, "getBytes: "+e);
-
             e.printStackTrace();
         }
 //内部的队列     不是每一个都可以用
@@ -106,12 +107,41 @@ public class H264Player implements Runnable {
            int outIndex= mediaCodec.dequeueOutputBuffer(info, 10000);
 //音视频   裁剪一段 true  1    false   2
             if (outIndex >= 0) {
+
+//完整帧 I P  B帧
+                ByteBuffer byteBuffer =mediaCodec.getOutputBuffer(outIndex);
+
+                byteBuffer.position(info.offset);
+                byteBuffer.limit(info.offset + info.size);
+//图像  Java C++
+                byte[] ba = new byte[byteBuffer.remaining()];
+                byteBuffer.get(ba);
+
+                YuvImage yuvImage = new YuvImage(ba, ImageFormat.NV21, 368, 384, null);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                yuvImage.compressToJpeg(new Rect(0, 0, 368, 384), 100, baos);
+                byte[] jdata = baos.toByteArray();//rgb
+                Bitmap bmp = BitmapFactory.decodeByteArray(jdata, 0, jdata.length);
+                if (bmp != null) {
+                    if (i >5) {
+                        try {
+                            File myCaptureFile = new File(Environment.getExternalStorageDirectory(), "img.png");
+                            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(myCaptureFile));
+                            bmp.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+                            bos.flush();
+                            bos.close();
+                        } catch ( Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    i++;
+                }
                 try {
                     Thread.sleep(33);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                mediaCodec.releaseOutputBuffer(outIndex, true);
+                mediaCodec.releaseOutputBuffer(outIndex, false);
             }else {
 //视频同步  不能  做到  1ms    60ms 差异   3600ms
             }
@@ -120,6 +150,7 @@ public class H264Player implements Runnable {
 
     }
 
+    int i = 0;
     private int findByFrame( byte[] bytes, int start, int totalSize) {
 
         int j = 0;
@@ -131,11 +162,8 @@ public class H264Player implements Runnable {
         }
         return -1;
     }
-    public byte[] getBytes(String path) throws IOException {
-        Log.e(TAG, "getBytes55:length  "+new File(path).length());
-        FileInputStream fileInputStream = new FileInputStream(new File(path));
-        InputStream is = new DataInputStream(fileInputStream);
-
+    public   byte[] getBytes(String path) throws IOException {
+        InputStream is =   new DataInputStream(new FileInputStream(new File(path)));
         int len;
         int size = 1024;
         byte[] buf;
